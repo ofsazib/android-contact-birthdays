@@ -9,9 +9,7 @@ import java.util.List;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -48,7 +46,7 @@ public class BirthdayReminderActivity extends ListActivity {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position,
             long id) {
-          showContactDetails(position);
+          showContactInfo(position);
         }
       });
 
@@ -60,13 +58,11 @@ public class BirthdayReminderActivity extends ListActivity {
 
   /**
    * @param position
-   * @param text
    */
-  protected void showContactDetails(int position) {
-    Intent intent = new Intent(Intent.ACTION_VIEW);
-    Uri uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, 
-      String.valueOf(this.contactsList.get(position).getContact_id()));
-    intent.setData(uri);
+  protected void showContactInfo(int position) {
+    Intent intent = new Intent(this, ContactInfoActivity.class);
+    BContact con = this.contactsList.get(position);
+    intent.putExtra(ContactInfoActivity.DATA_KEY__CONTACT_ID, con.getLookup_Key());
     startActivity(intent);
   }
 
@@ -163,6 +159,8 @@ public class BirthdayReminderActivity extends ListActivity {
      */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+      
+      // Optimize using recycled rows - may not help since we need to regenerate display message
       View row = super.getView(position, convertView, parent);
       ImageView icon = (ImageView) row.findViewById(R.id.icon);
       
@@ -175,6 +173,7 @@ public class BirthdayReminderActivity extends ListActivity {
           icon.setImageResource(R.drawable.ic_anniversary);
           break;
         default:
+          // TODO change to generic event icon
           icon.setImageResource(R.drawable.icon);
       }
       

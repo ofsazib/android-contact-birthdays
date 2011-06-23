@@ -60,7 +60,7 @@ public class CheckEventsService extends Service {
         
         // Instantiate notification
         String tickerText = "Upcoming birthdays & anniversaries";
-        Notification notification = new Notification(R.drawable.icon, tickerText, 
+        Notification notification = new Notification(R.drawable.reminder_smiley_face, tickerText, 
           System.currentTimeMillis());;
           
         // Alert with sound and vibration

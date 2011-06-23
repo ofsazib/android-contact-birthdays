@@ -10,18 +10,18 @@ import android.provider.ContactsContract;
  *
  */
 class BContact implements Comparable<BContact> {
-  private String name, contact_id;
+  private String name, lookup_key;
   private int event_type;
   private int event_date_day, event_date_month, event_date_year;
   private int event_num_year_old;
-  
+
   public static final int BIRTHDAY_EVENT = ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY;
   public static final int ANNIVERSARY_EVENT = ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY;
   public static final int OTHER_EVENT = -1;
 
-  public BContact(String name, String contact_id, int event_date_day, int event_date_month, int event_date_year, int event_type) {
+  public BContact(String name, String lookup_key, int event_date_day, int event_date_month, int event_date_year, int event_type) {
     this.name = name;
-    this.contact_id = contact_id;
+    this.lookup_key = lookup_key;
     this.event_date_day = event_date_day;
     this.event_date_month = event_date_month;
     this.event_date_year = event_date_year;
@@ -41,8 +41,8 @@ class BContact implements Comparable<BContact> {
   /**
    * @return the contact_id
    */
-  public String getContact_id() {
-    return this.contact_id;
+  public String getLookup_Key() {
+    return this.lookup_key;
   }
 
   /**
@@ -99,7 +99,7 @@ class BContact implements Comparable<BContact> {
     final int prime = 31;
     int result = 1;
     result = prime * result
-        + ((this.contact_id == null) ? 0 : this.contact_id.hashCode());
+        + ((this.lookup_key == null) ? 0 : this.lookup_key.hashCode());
     result = prime * result + this.event_date_day;
     result = prime * result + this.event_date_month;
     result = prime * result + this.event_type;
@@ -118,10 +118,10 @@ class BContact implements Comparable<BContact> {
     if (!(obj instanceof BContact))
       return false;
     BContact other = (BContact) obj;
-    if (this.contact_id == null) {
-      if (other.contact_id != null)
+    if (this.lookup_key == null) {
+      if (other.lookup_key != null)
         return false;
-    } else if (!this.contact_id.equals(other.contact_id))
+    } else if (!this.lookup_key.equals(other.lookup_key))
       return false;
     if (this.event_date_day != other.event_date_day)
       return false;
