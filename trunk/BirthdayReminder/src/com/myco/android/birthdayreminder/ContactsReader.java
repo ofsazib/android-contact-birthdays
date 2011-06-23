@@ -3,6 +3,7 @@
  */
 package com.myco.android.birthdayreminder;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -11,6 +12,8 @@ import java.util.List;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.ContactsContract;
 
@@ -131,11 +134,11 @@ public class ContactsReader {
             // Add more appropriate object, note that earlier object may also be as appropriate
             if (!set.add(con)) {
               // TODO Error
-              throw new Exception("Adding more appropriate event failed: " + con.getContact_id());
+              throw new Exception("Adding more appropriate event failed: " + con.getLookup_Key());
             }
           } else {
             // TODO Error
-            throw new Exception("Removing existing event failed: " + con.getContact_id());
+            throw new Exception("Removing existing event failed: " + con.getLookup_Key());
           }
         }
       }
@@ -161,9 +164,9 @@ public class ContactsReader {
     
     // Fields to fetch in query
     String[] projection = new String[] { ContactsContract.Contacts.DISPLAY_NAME,                         
-              ContactsContract.CommonDataKinds.Event.CONTACT_ID,
+              ContactsContract.Contacts.LOOKUP_KEY,
               ContactsContract.CommonDataKinds.Event.START_DATE,
-              ContactsContract.CommonDataKinds.Event.TYPE
+              ContactsContract.CommonDataKinds.Event.TYPE,
               };
 
     // Query selection
@@ -178,17 +181,23 @@ public class ContactsReader {
     String sortOrder = null; /* extractDateInMM_DD(ContactsContract.CommonDataKinds.Event.START_DATE); */
     
     // Search into a Cursor
-    Cursor c = this.context.getContentResolver().query(dataUri, projection, selection, selectArgs, sortOrder);
+    Cursor c = this.context.getContentResolver().query(dataUri, projection, 
+      selection, selectArgs, sortOrder);
 
     // Convert results into List<BContact> and return
     List<BContact> result = new ArrayList<BContact>();
     while (c.moveToNext()) {
       String dateString = c.getString(2);
+      // TODO Error handling
       int day = getDatabaseDateDay(dateString);
       int month = getDatabaseDateMonth(dateString);
       int year = getDatabaseDateYear(dateString);
-
-      BContact contact = new BContact(c.getString(0), c.getString(1), day, month, year, Integer.parseInt(c.getString(3)));
+      
+      String name = c.getString(0);
+      String lookup_key = c.getString(1);
+      String type = c.getString(3);
+      BContact contact = new BContact(name, lookup_key, 
+        day, month, year, Integer.parseInt(type));
       result.add(contact);
     }
     c.close();
@@ -240,5 +249,91 @@ public class ContactsReader {
   private String getDatabaseDateFormat() {
     // Not yet needed till Issue #9676 & #2947 are fixed - currently the database format is yyyy-mm-dd
     return "yyyy-mm-dd";
+  }
+  
+  public Bitmap openContactPhoto(String lookup_key) {
+    // Find contentUri since only that seems to work
+    Uri lookUpUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookup_key);
+    Uri contentUri = ContactsContract.Contacts.lookupContact(this.context.getContentResolver(), 
+      lookUpUri);
+
+    InputStream stream = null;
+    try {
+      stream = ContactsContract.Contacts.openContactPhotoInputStream(this.context.getContentResolver(),
+          contentUri);
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
+    if (stream != null) {
+      return BitmapFactory.decodeStream(stream);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * @param string
+   * @return
+   */
+  public BContact getBContact(String lookup_key) {
+    // Uri
+    Uri dataUri = ContactsContract.Data.CONTENT_URI;
+    
+    // Fields to fetch in query
+    String[] projection = new String[] { ContactsContract.Contacts.DISPLAY_NAME,     
+              ContactsContract.CommonDataKinds.Event.START_DATE,
+              ContactsContract.CommonDataKinds.Event.TYPE,
+              };
+    
+    // Query selection
+    String selection = ContactsContract.Data.MIMETYPE + "= ? AND " + ContactsContract.Contacts.LOOKUP_KEY + "= ?";
+    
+    // Arguments to query above
+    String[] selectArgs = new String[] {ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE, lookup_key};
+    
+    // Search into a Cursor
+    Cursor c = null;
+    BContact result = null;
+    try {
+      c = this.context.getContentResolver().query(dataUri, projection, selection, selectArgs, null);
+    
+      // Convert results into BContact and return
+      // Count can be greater than 1, in that case need to uniquefy
+      List<BContact> resultList = new ArrayList<BContact>();
+      while (c.moveToNext()) {
+        // Parse data
+        String name = c.getString(0);
+        String type = c.getString(2);
+        String dateString = c.getString(1);
+        int day = getDatabaseDateDay(dateString);
+        int month = getDatabaseDateMonth(dateString);
+        int year = getDatabaseDateYear(dateString);
+        
+        BContact con = new BContact(name, lookup_key, 
+          day, month, year, Integer.parseInt(type));
+        resultList.add(con);
+      }
+      
+      // Uniquefy if more than 1
+      if (resultList.size() != 1) {
+        resultList = uniquefy(resultList);
+        if (resultList.size() != 1) {
+          // TODO something is wrong
+        }
+      }
+      
+      result = resultList.get(0);
+    } catch (Exception e) {
+      // TODO Error handling?
+      e.printStackTrace();
+    } finally {
+      if (c != null) {
+        c.close();
+      }
+    }
+   
+    return result;
   }
 }
