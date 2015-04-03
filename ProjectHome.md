@@ -1,0 +1,1 @@
+Reminds about contact birthdays and anniversaries on Android devices
